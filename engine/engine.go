@@ -1,25 +1,17 @@
 package engine
 
 import (
-	"fmt"
 	"net/http"
 )
 
-type (
-	HandlerFunc func(writer http.ResponseWriter, req *http.Request)
-	Method      string
-	Pattern     string
-)
+type HandlerFunc func(c *Context)
 
 type Engine struct {
-	router map[Method]map[Pattern]HandlerFunc
+	router *router
 }
 
-func (engine *Engine) addRouter(method Method, pattern string, handlerFunc HandlerFunc) {
-	if engine.router[method] == nil {
-		engine.router[method] = make(map[Pattern]HandlerFunc)
-	}
-	engine.router[method][Pattern(pattern)] = handlerFunc
+func (engine *Engine) addRouter(method string, pattern string, handlerFunc HandlerFunc) {
+	engine.router.addRouter(method, pattern, handlerFunc)
 }
 
 func (engine *Engine) GET(pattern string, handlerFunc HandlerFunc) {
@@ -36,14 +28,10 @@ func (engine *Engine) Run(addr string) error {
 
 func New() *Engine {
 	return &Engine{
-		make(map[Method]map[Pattern]HandlerFunc),
+		newRouter(),
 	}
 }
 
 func (engine *Engine) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	if handlerFunc, found := engine.router[Method(req.Method)][Pattern(req.URL.Path)]; found {
-		handlerFunc(writer, req)
-	} else {
-		_, _ = fmt.Fprintf(writer, "404 NOT FOUND.")
-	}
+	engine.router.handle(newContext(writer, req))
 }
