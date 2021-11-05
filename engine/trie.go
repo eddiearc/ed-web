@@ -1,6 +1,8 @@
 package engine
 
-import "errors"
+import (
+	"errors"
+)
 
 // Trie Support restful.
 // ':[variable_name]' wildcard.
@@ -87,10 +89,19 @@ func (n *node) searchMatchNode(part string) *node {
 	return nil
 }
 
-func getPattern(pattern string) (string, error) {
-	return "", nil
-}
-
-func getParts(pattern string) []string {
-	return nil
+func getParts(urlPath string) (parts []string) {
+	var p []byte
+	for i := range urlPath {
+		b := urlPath[i]
+		if b != '/' {
+			p = append(p, b)
+		} else if b == '/' && len(p) > 0 {
+			parts = append(parts, string(p))
+			p = p[:0]
+		}
+	}
+	if len(p) > 0 {
+		parts = append(parts, string(p))
+	}
+	return parts
 }
