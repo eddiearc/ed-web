@@ -5,6 +5,25 @@ import (
 	"testing"
 )
 
+func Test_formatUrlPath(t *testing.T) {
+	r, err := formatUrlPath("/hello/world")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "/hello/world", r)
+
+	r, err = formatUrlPath("/hello/world/ed-web")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "/hello/world/ed-web", r)
+
+	_, err = formatUrlPath("///hello///world//ed-web")
+	assert.Equal(t, ErrPatternFormatError, err)
+
+	_, err = formatUrlPath("///hello//world//ed-web")
+	assert.Equal(t, ErrPatternFormatError, err)
+
+	_, err = formatUrlPath("/hello//world/ed-web")
+	assert.Equal(t, ErrPatternFormatError, err)
+}
+
 func Test_getParts(t *testing.T) {
 	r1 := getParts("/hello/world")
 

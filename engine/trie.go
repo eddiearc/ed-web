@@ -7,10 +7,12 @@ import (
 // Trie Support restful.
 // ':[variable_name]' wildcard.
 
-// ErrWildcardOnlyOne If curr child node is wildcard match node,
+// ErrEachLevelWildcardOnlyOne If curr child node is wildcard match node,
 // must throw an exception,
 // because a request only match a handler.
-var ErrWildcardOnlyOne = errors.New("current level exist wildcard node, no longer insert node in this level")
+var ErrEachLevelWildcardOnlyOne = errors.New("current level exist wildcard node, no longer insert node in this level")
+
+var ErrPatternFormatError = errors.New("current level exist wildcard node, no longer insert node in this level")
 
 type node struct {
 	pattern  string
@@ -40,7 +42,7 @@ func (n *node) insert(pattern string, parts []string, level int) (err error) {
 		}
 		// If a level exist a wildcard node that only one node.
 		if child.wildcard && len(n.children) > 0 {
-			return ErrWildcardOnlyOne
+			return ErrEachLevelWildcardOnlyOne
 		}
 		n.children = append(n.children, child)
 	}
@@ -55,7 +57,7 @@ func (n *node) insert(pattern string, parts []string, level int) (err error) {
 func (n *node) insertMatchNode(part string) (*node, error) {
 	// If a level exist a wildcard node that only one node.
 	if len(n.children) == 1 && n.children[0].wildcard {
-		return nil, ErrWildcardOnlyOne
+		return nil, ErrEachLevelWildcardOnlyOne
 	}
 	for _, child := range n.children {
 		if child.part == part {
@@ -87,6 +89,24 @@ func (n *node) searchMatchNode(part string) *node {
 		}
 	}
 	return nil
+}
+
+// formatPattern
+func formatUrlPath(pattern string) (string, error) {
+	if pattern[0] != '/' {
+		err := ErrPatternFormatError
+		return "", err
+	}
+	var ret []byte
+	for i := range pattern {
+		if pattern[i] == '/' && len(ret) > 0 && ret[len(ret)-1] == '/' {
+			err := ErrPatternFormatError
+			return "", err
+		}
+		ret = append(ret, pattern[i])
+	}
+
+	return string(ret), nil
 }
 
 func getParts(urlPath string) (parts []string) {
