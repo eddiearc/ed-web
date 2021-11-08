@@ -69,7 +69,7 @@ func (r *Router) wildcardParameter(pattern string, parts []string, c *Context) {
 		}
 		// fuzzy match parameter.
 		if p[0] == ':' && len(p) > 1 {
-			c.Req.URL.Query().Set(string(p[1:]), parts[i])
+			c.Params[p[1:]] = parts[i]
 		}
 	}
 }

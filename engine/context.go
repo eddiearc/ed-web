@@ -15,6 +15,7 @@ type Context struct {
 	Path       string
 	Method     string
 	StatusCode int
+	Params     map[string]string
 }
 
 func newContext(writer http.ResponseWriter, req *http.Request) *Context {
@@ -23,7 +24,13 @@ func newContext(writer http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		Params: map[string]string{},
 	}
+}
+
+// Param restful param.
+func (c *Context) Param(key string) string {
+	return c.Params[key]
 }
 
 // Query get method value in url.
