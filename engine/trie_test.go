@@ -22,6 +22,9 @@ func Test_formatUrlPath(t *testing.T) {
 
 	_, err = formatUrlPath("/hello//world/ed-web")
 	assert.Equal(t, ErrPatternFormatError, err)
+
+	_, err = formatUrlPath("/hello/world/ed-web?id=666")
+	assert.Equal(t, ErrPatternFormatError, err)
 }
 
 func Test_getParts(t *testing.T) {

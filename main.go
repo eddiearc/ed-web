@@ -6,9 +6,9 @@ import (
 )
 
 func main() {
-	e := engine.New()
-	e.GET("/", func(c *engine.Context) {
+	e := engine.New(func(c *engine.Context) {
 		c.String(http.StatusOK, "Welcome to ed-web.")
 	})
+
 	_ = e.Run(":9999")
 }

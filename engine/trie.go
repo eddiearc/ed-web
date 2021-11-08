@@ -5,86 +5,92 @@ import (
 )
 
 // Trie Support restful.
-// ':[variable_name]' wildcard.
+// ':[variable_name]' Wildcard.
 
-// ErrEachLevelWildcardOnlyOne If curr child node is wildcard match node,
-// must throw an exception,
-// because a request only match a handler.
-var ErrEachLevelWildcardOnlyOne = errors.New("current level exist wildcard node, no longer insert node in this level")
+var ErrPatternFormatError = errors.New("current level exist Wildcard Node, no longer insert Node in this level")
 
-var ErrPatternFormatError = errors.New("current level exist wildcard node, no longer insert node in this level")
-
-type node struct {
-	pattern  string
+type Node struct {
+	Pattern  string
 	part     string
-	wildcard bool
-	children []*node
+	Wildcard bool
+	children []*Node
+	method   Method
+	Handler  HandlerFunc
 }
 
-func (n *node) insert(pattern string, parts []string, level int) (err error) {
+func newTrieRoot(rootHandler HandlerFunc) *Node {
+	return &Node{
+		Pattern:  "/",
+		part:     "",
+		Wildcard: false,
+		children: nil,
+		method:   REQUEST,
+		Handler:  rootHandler,
+	}
+}
+
+func (n *Node) insert(method Method, pattern string, parts []string, handler HandlerFunc, level int) {
 	if len(parts) == level {
-		n.pattern = pattern
+		n.Pattern = pattern
+		n.method = method
+		n.Handler = handler
 		return
 	}
 
 	curPart := parts[level]
-	child, err := n.insertMatchNode(curPart)
-	if err != nil {
-		return err
-	}
+	child := n.insertMatchNode(curPart)
 
 	if child == nil {
-		child = &node{
+		child = &Node{
 			part: curPart,
-			// If current node or parent node is wildcard,
-			// current node will be wildcard.
-			wildcard: n.wildcard || curPart[0] == ':' || curPart[0] == '*',
-		}
-		// If a level exist a wildcard node that only one node.
-		if child.wildcard && len(n.children) > 0 {
-			return ErrEachLevelWildcardOnlyOne
+			// If current Node or parent Node is Wildcard,
+			// current Node will be Wildcard.
+			Wildcard: n.Wildcard || curPart[0] == ':' || curPart[0] == '*',
 		}
 		n.children = append(n.children, child)
 	}
 
-	if err = child.insert(pattern, parts, level+1); err != nil {
-		return err
-	}
+	child.insert(method, pattern, parts, handler, level+1)
 
 	return
 }
 
-func (n *node) insertMatchNode(part string) (*node, error) {
-	// If a level exist a wildcard node that only one node.
-	if len(n.children) == 1 && n.children[0].wildcard {
-		return nil, ErrEachLevelWildcardOnlyOne
-	}
+func (n *Node) insertMatchNode(part string) *Node {
 	for _, child := range n.children {
 		if child.part == part {
-			return child, nil
+			return child
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-func (n *node) search(pattern string, parts []string, level int) *node {
+func (n *Node) search(method Method, pattern string, parts []string, level int) *Node {
 	if len(parts) == level {
-		// TODO parse wildcard k-v.
-		return n
+		if n.suit(method) {
+			return n
+		}
+		return nil
 	}
 
 	curPart := parts[level]
 
 	if child := n.searchMatchNode(curPart); child != nil {
-		return child.search(pattern, parts, level+1)
+		return child.search(method, pattern, parts, level+1)
 	}
 
 	return nil
 }
 
-func (n *node) searchMatchNode(part string) *node {
+func (n *Node) searchMatchNode(part string) *Node {
+	// exact match
 	for _, child := range n.children {
-		if child.wildcard || child.part == part {
+		if child.part == part {
+			return child
+		}
+	}
+	// fuzzy match
+	for _, child := range n.children {
+		if child.Wildcard {
 			return child
 		}
 	}
@@ -94,16 +100,18 @@ func (n *node) searchMatchNode(part string) *node {
 // formatPattern
 func formatUrlPath(pattern string) (string, error) {
 	if pattern[0] != '/' {
-		err := ErrPatternFormatError
-		return "", err
+		return "", ErrPatternFormatError
 	}
 	var ret []byte
 	for i := range pattern {
-		if pattern[i] == '/' && len(ret) > 0 && ret[len(ret)-1] == '/' {
-			err := ErrPatternFormatError
-			return "", err
+		b := pattern[i]
+		if b == '/' && len(ret) > 0 && ret[len(ret)-1] == '/' {
+			return "", ErrPatternFormatError
 		}
-		ret = append(ret, pattern[i])
+		if b == '?' {
+			return "", ErrPatternFormatError
+		}
+		ret = append(ret, b)
 	}
 
 	return string(ret), nil
@@ -124,4 +132,11 @@ func getParts(urlPath string) (parts []string) {
 		parts = append(parts, string(p))
 	}
 	return parts
+}
+
+func (n *Node) suit(method Method) bool {
+	if n.method == REQUEST {
+		return true
+	}
+	return n.method == method
 }
