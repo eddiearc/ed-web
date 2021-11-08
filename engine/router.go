@@ -52,10 +52,24 @@ func (r *Router) handle(c *Context) {
 	node := r.root.search(method, urlPath, parts, 0)
 	if node != nil {
 		if node.Wildcard {
-			// TODO parse Wildcard k-v, store in context.
+			r.wildcardParameter(node.Pattern, parts, c)
 		}
 		node.Handler(c)
 	} else {
 		c.String(http.StatusNotFound, "404 NOT FOUND.\n PATH: %s\n", c.Path)
+	}
+}
+
+func (r *Router) wildcardParameter(pattern string, parts []string, c *Context) {
+	patternParts := getParts(pattern)
+
+	for i, p := range patternParts {
+		if i >= len(parts) {
+			return
+		}
+		// fuzzy match parameter.
+		if p[0] == ':' && len(p) > 1 {
+			c.Req.URL.Query().Set(string(p[1:]), parts[i])
+		}
 	}
 }
