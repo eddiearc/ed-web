@@ -7,7 +7,9 @@ import (
 type HandlerFunc func(c *Context)
 
 type Engine struct {
+	*RouterGroup
 	router *Router
+	groups []*RouterGroup // store all groups
 }
 
 func (engine *Engine) addRouter(method Method, pattern string, handlerFunc HandlerFunc) {
@@ -30,10 +32,13 @@ func (engine *Engine) Run(addr string) error {
 	return http.ListenAndServe(addr, engine)
 }
 
-func New(rootHandler HandlerFunc) *Engine {
-	return &Engine{
-		newRouter(rootHandler),
+func New(rootHandler HandlerFunc) (e *Engine) {
+	e = &Engine{
+		router: newRouter(rootHandler),
 	}
+	e.groups = []*RouterGroup{e.RouterGroup}
+	e.RouterGroup = &RouterGroup{engine: e}
+	return e
 }
 
 func (engine *Engine) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
