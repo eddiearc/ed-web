@@ -7,11 +7,14 @@ type RouterGroup struct {
 }
 
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
-	return &RouterGroup{
+	e := group.engine
+	newGroup := &RouterGroup{
 		prefix:      group.prefix + prefix,
 		middlewares: []HandlerFunc{},
-		engine:      group.engine,
+		engine:      e,
 	}
+	e.groups = append(e.groups, newGroup)
+	return newGroup
 }
 
 func (group *RouterGroup) groupAddRouter(method Method, pattern string, handler HandlerFunc) {
