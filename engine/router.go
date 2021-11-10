@@ -1,8 +1,6 @@
 package engine
 
-import (
-	"net/http"
-)
+import "net/http"
 
 type Router struct {
 	// root route and match request that execute Handler.
@@ -16,12 +14,6 @@ const (
 	GET
 	POST
 )
-
-func newRouter(rootHandler HandlerFunc) *Router {
-	return &Router{
-		root: newTrieRoot(rootHandler),
-	}
-}
 
 func (r *Router) addRouter(method Method, pattern string, handler HandlerFunc) {
 	urlPath, err := formatUrlPath(pattern)
@@ -54,10 +46,14 @@ func (r *Router) handle(c *Context) {
 		if node.Wildcard {
 			r.wildcardParameter(node.Pattern, parts, c)
 		}
-		node.Handler(c)
+		c.handlers = append(c.handlers, node.Handler)
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND.\n PATH: %s\n", c.Path)
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND.\n PATH: %s\n", c.Path)
+		})
 	}
+
+	c.Next()
 }
 
 func (r *Router) wildcardParameter(pattern string, parts []string, c *Context) {

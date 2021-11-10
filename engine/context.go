@@ -16,15 +16,19 @@ type Context struct {
 	Method     string
 	StatusCode int
 	Params     map[string]string
+	handlers   []HandlerFunc
+	index      int
 }
 
-func newContext(writer http.ResponseWriter, req *http.Request) *Context {
+func newContext(writer http.ResponseWriter, req *http.Request, middlewares []HandlerFunc) *Context {
 	return &Context{
-		Writer: writer,
-		Req:    req,
-		Path:   req.URL.Path,
-		Method: req.Method,
-		Params: map[string]string{},
+		Writer:   writer,
+		Req:      req,
+		Path:     req.URL.Path,
+		Method:   req.Method,
+		Params:   map[string]string{},
+		handlers: middlewares,
+		index:    -1,
 	}
 }
 
@@ -81,8 +85,19 @@ func (c *Context) Data(code int, data []byte) {
 	}
 }
 
+// String format string message.
 func (c *Context) String(code int, format string, values ...interface{}) {
 	c.SetHeader("Content-Type", "text/plain")
 	c.Status(code)
 	_, _ = c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
+}
+
+// Next execute middleware.
+func (c *Context) Next() {
+	c.index++
+	if c.index < len(c.handlers) {
+		c.handlers[c.index](c)
+	} else {
+		return
+	}
 }

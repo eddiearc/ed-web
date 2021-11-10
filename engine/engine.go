@@ -2,18 +2,15 @@ package engine
 
 import (
 	"net/http"
+	"strings"
 )
 
 type HandlerFunc func(c *Context)
 
 type Engine struct {
 	*RouterGroup
-	router *Router
+	*Router
 	groups []*RouterGroup // store all groups
-}
-
-func (engine *Engine) addRouter(method Method, pattern string, handlerFunc HandlerFunc) {
-	engine.router.addRouter(method, pattern, handlerFunc)
 }
 
 func (engine *Engine) REQUEST(pattern string, handler HandlerFunc) {
@@ -21,11 +18,11 @@ func (engine *Engine) REQUEST(pattern string, handler HandlerFunc) {
 }
 
 func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.addRouter(GET, pattern, handler)
+	engine.Router.addRouter(GET, pattern, handler)
 }
 
 func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.addRouter(POST, pattern, handler)
+	engine.Router.addRouter(POST, pattern, handler)
 }
 
 func (engine *Engine) Run(addr string) error {
@@ -34,13 +31,25 @@ func (engine *Engine) Run(addr string) error {
 
 func New(rootHandler HandlerFunc) (e *Engine) {
 	e = &Engine{
-		router: newRouter(rootHandler),
+		// router main page.
+		Router: &Router{
+			root: newTrieRoot(rootHandler),
+		},
 	}
-	e.groups = []*RouterGroup{e.RouterGroup}
 	e.RouterGroup = &RouterGroup{engine: e}
+	e.groups = []*RouterGroup{e.RouterGroup}
 	return e
 }
 
 func (engine *Engine) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	engine.router.handle(newContext(writer, req))
+	var middlewares []HandlerFunc
+
+	// check current url match those group prefix and apply (middlewares).
+	for _, g := range engine.groups {
+		if strings.HasPrefix(req.URL.Path, g.prefix) {
+			middlewares = append(middlewares, g.middlewares...)
+		}
+	}
+
+	engine.handle(newContext(writer, req, middlewares))
 }

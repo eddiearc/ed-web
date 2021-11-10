@@ -9,24 +9,28 @@ type RouterGroup struct {
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	return &RouterGroup{
 		prefix:      group.prefix + prefix,
-		middlewares: make([]HandlerFunc, 0),
+		middlewares: []HandlerFunc{},
 		engine:      group.engine,
 	}
 }
 
-func (group *RouterGroup) addRouter(method Method, pattern string, handler HandlerFunc) {
+func (group *RouterGroup) groupAddRouter(method Method, pattern string, handler HandlerFunc) {
 	urlPath := group.prefix + pattern
 	group.engine.addRouter(method, urlPath, handler)
 }
 
 func (group *RouterGroup) REQUEST(pattern string, handler HandlerFunc) {
-	group.addRouter(REQUEST, pattern, handler)
+	group.groupAddRouter(REQUEST, pattern, handler)
 }
 
 func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
-	group.addRouter(GET, pattern, handler)
+	group.groupAddRouter(GET, pattern, handler)
 }
 
 func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
-	group.addRouter(POST, pattern, handler)
+	group.groupAddRouter(POST, pattern, handler)
+}
+
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
 }
