@@ -14,10 +14,8 @@ func FormatAsDate(t time.Time) string {
 }
 
 func main() {
-	e := edw.New(func(c *edw.Context) {
-		c.String(http.StatusOK, "Welcome to ed-web.")
-	})
-	e.Use(edw.Logger())
+	e := edw.Default()
+
 	e.SetFuncMap(template.FuncMap{
 		"FormatAsDate": FormatAsDate,
 	})
@@ -47,6 +45,11 @@ func main() {
 				Age  int
 			}{member1, member2},
 		})
+	})
+
+	e.GET("/panic", func(c *edw.Context) {
+		names := []string{"geektutu"}
+		c.String(http.StatusOK, names[100])
 	})
 
 	e.GET("/date", func(c *edw.Context) {

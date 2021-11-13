@@ -53,3 +53,12 @@ func (engine *Engine) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	engine.handle(newContext(writer, req, middlewares, engine))
 }
+
+func Default() *Engine {
+	e := New(func(c *Context) {
+		c.String(http.StatusOK, "Welcome to ed-web.")
+	})
+	e.Use(Logger())
+	e.Use(Recovery())
+	return e
+}

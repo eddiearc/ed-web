@@ -105,3 +105,8 @@ func (c *Context) Next() {
 		return
 	}
 }
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, JSON{"message": err})
+}
