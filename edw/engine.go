@@ -51,5 +51,5 @@ func (engine *Engine) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	engine.handle(newContext(writer, req, middlewares))
+	engine.handle(newContext(writer, req, middlewares, engine))
 }

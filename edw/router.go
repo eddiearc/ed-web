@@ -1,6 +1,9 @@
 package edw
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 type Router struct {
 	// root route and match request that execute Handler.
@@ -63,9 +66,14 @@ func (r *Router) wildcardParameter(pattern string, parts []string, c *Context) {
 		if i >= len(parts) {
 			return
 		}
-		// fuzzy match parameter.
+		// restful match parameter.
 		if p[0] == ':' && len(p) > 1 {
 			c.Params[p[1:]] = parts[i]
+		}
+		// fuzzy match parameter.
+		if p[0] == '*' && len(p) > 1 {
+			c.Params[p[1:]] = strings.Join(parts[i:], "/")
+			break
 		}
 	}
 }

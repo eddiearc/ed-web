@@ -2,6 +2,7 @@ package edw
 
 import (
 	"errors"
+	"strings"
 )
 
 // Trie Support restful.
@@ -65,7 +66,7 @@ func (n *Node) insertMatchNode(part string) *Node {
 }
 
 func (n *Node) search(method Method, pattern string, parts []string, level int) *Node {
-	if len(parts) == level {
+	if len(parts) == level || strings.HasPrefix(n.part, "*") {
 		if n.suit(method) {
 			return n
 		}

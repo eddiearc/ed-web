@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+type JSON map[string]interface{}
+
 //Context Http request context.
 type Context struct {
 	// about http connect.
@@ -18,9 +20,10 @@ type Context struct {
 	Params     map[string]string
 	handlers   []HandlerFunc
 	index      int
+	engine     *Engine
 }
 
-func newContext(writer http.ResponseWriter, req *http.Request, middlewares []HandlerFunc) *Context {
+func newContext(writer http.ResponseWriter, req *http.Request, middlewares []HandlerFunc, engine *Engine) *Context {
 	return &Context{
 		Writer:   writer,
 		Req:      req,
@@ -29,6 +32,7 @@ func newContext(writer http.ResponseWriter, req *http.Request, middlewares []Han
 		Params:   map[string]string{},
 		handlers: middlewares,
 		index:    -1,
+		engine:   engine,
 	}
 }
 
@@ -69,11 +73,11 @@ func (c *Context) JSON(code int, obj interface{}) {
 }
 
 // HTML http response html format data.
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	if _, err := c.Writer.Write([]byte(html)); err != nil {
-		http.Error(c.Writer, err.Error(), 500)
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.String(500, err.Error())
 	}
 }
 
