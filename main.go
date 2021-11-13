@@ -25,12 +25,12 @@ func main() {
 	e.LoadHTMLGlob("templates/*")
 	e.Static("/assets", "./static")
 
-	stu1 := &struct {
+	member1 := &struct {
 		Name string
 		Age  int
 	}{Name: "eddie", Age: 20}
 
-	stu2 := &struct {
+	member2 := &struct {
 		Name string
 		Age  int
 	}{Name: "jack", Age: 22}
@@ -39,20 +39,20 @@ func main() {
 		c.HTML(http.StatusOK, "css.tmpl", nil)
 	})
 
-	e.GET("/students", func(c *edw.Context) {
+	e.GET("/members", func(c *edw.Context) {
 		c.HTML(http.StatusOK, "arr.tmpl", edw.JSON{
-			"title": "gee",
+			"title": "ed-web",
 			"stuArr": [2]*struct {
 				Name string
 				Age  int
-			}{stu1, stu2},
+			}{member1, member2},
 		})
 	})
 
 	e.GET("/date", func(c *edw.Context) {
 		c.HTML(http.StatusOK, "custom_func.tmpl", edw.JSON{
-			"title": "gee",
-			"now":   time.Date(2019, 8, 17, 0, 0, 0, 0, time.UTC),
+			"title": "ed-web",
+			"now":   time.Date(2021, 11, 10, 20, 0, 0, 0, time.UTC),
 		})
 	})
 
